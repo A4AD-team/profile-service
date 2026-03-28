@@ -16,6 +16,7 @@ var ErrNotFound = errors.New("profile not found")
 type ProfileRepository interface {
 	Create(ctx context.Context, p *domain.Profile) error
 	GetByUserID(ctx context.Context, userID uuid.UUID) (*domain.Profile, error)
+	GetByAuthorID(ctx context.Context, authorID int64) (*domain.Profile, error)
 	GetByUsername(ctx context.Context, username string) (*domain.Profile, error)
 	Update(ctx context.Context, userID uuid.UUID, req *domain.UpdateProfileRequest) (*domain.Profile, error)
 	IncrementStats(ctx context.Context, userID uuid.UUID, postDelta, commentDelta int) error
@@ -61,6 +62,26 @@ func (r *postgresRepo) GetByUserID(ctx context.Context, userID uuid.UUID) (*doma
 	}
 	if err != nil {
 		return nil, fmt.Errorf("get profile by user_id: %w", err)
+	}
+	return p, nil
+}
+
+func (r *postgresRepo) GetByAuthorID(ctx context.Context, authorID int64) (*domain.Profile, error) {
+	p := &domain.Profile{}
+	err := r.pool.QueryRow(ctx, `
+        SELECT id, user_id, username, email, full_name, bio, location, is_public,
+               post_count, comment_count, reputation, joined_at, updated_at
+        FROM profiles WHERE user_id = $1`, authorID,
+	).Scan(
+		&p.ID, &p.UserID, &p.Username, &p.Email, &p.FullName, &p.Bio, &p.Location,
+		&p.IsPublic, &p.PostCount, &p.CommentCount, &p.Reputation,
+		&p.JoinedAt, &p.UpdatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("get profile by author_id: %w", err)
 	}
 	return p, nil
 }

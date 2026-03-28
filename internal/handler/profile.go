@@ -26,6 +26,28 @@ func NewProfileHandler(svc *service.ProfileService) *ProfileHandler {
 	}
 }
 
+// GET /internal/profiles/by-author/{authorId}
+func (h *ProfileHandler) GetProfileByAuthorID(w http.ResponseWriter, r *http.Request) {
+	authorIdStr := chi.URLParam(r, "authorId")
+	authorId, err := strconv.ParseInt(authorIdStr, 10, 64)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, "invalid author id")
+		return
+	}
+
+	profile, err := h.svc.GetProfileByAuthorID(r.Context(), authorId)
+	if err != nil {
+		if errors.Is(err, service.ErrProfileNotFound) {
+			respondError(w, http.StatusNotFound, "profile not found")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, "internal error")
+		return
+	}
+
+	respondJSON(w, http.StatusOK, profile)
+}
+
 // GET /api/v1/profiles/{username}
 func (h *ProfileHandler) GetProfileByUsername(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")

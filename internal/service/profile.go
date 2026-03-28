@@ -96,6 +96,18 @@ func (s *ProfileService) GetStats(ctx context.Context, userID uuid.UUID) (*domai
 	return &stats, nil
 }
 
+// GetProfileByAuthorID returns a profile by author ID (user_id from auth service).
+func (s *ProfileService) GetProfileByAuthorID(ctx context.Context, authorID int64) (*domain.Profile, error) {
+	p, err := s.repo.GetByAuthorID(ctx, authorID)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return nil, ErrProfileNotFound
+		}
+		return nil, err
+	}
+	return p, nil
+}
+
 // SearchProfiles searches profiles by username or bio keyword.
 func (s *ProfileService) SearchProfiles(ctx context.Context, q string, limit, offset int) ([]*domain.Profile, error) {
 	if limit <= 0 || limit > 50 {

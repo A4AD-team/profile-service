@@ -30,6 +30,9 @@ func RegisterRoutes(
 	r.With(middleware.InternalSecret(cfg.Auth.InternalSecret)).
 		Post("/internal/profiles", profileHandler.CreateProfile)
 
+	r.With(middleware.InternalSecret(cfg.Auth.InternalSecret)).
+		Get("/internal/profiles/by-author/{authorId}", profileHandler.GetProfileByAuthorID)
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(middleware.JWTAuth(cfg.Auth.JWTSecret))
 
